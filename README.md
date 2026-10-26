@@ -1,12 +1,12 @@
 # 🎓 Attendance Calculator
 
-> A beautiful, animation-rich attendance calculator that tells you exactly how many classes you can bunk — and how many you must attend to reach your target.
+> A beautiful, animation-rich attendance calculator that tells you exactly how many classes you can bunk — and how many you must attend to reach your threshold.
 
 [![Made with HTML](https://img.shields.io/badge/HTML-5-e34f26?logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS-3-1572b6?logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020+-f7df1e?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![No Build Step](https://img.shields.io/badge/Build-None-success)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green)](#license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
 
 ---
 
@@ -16,23 +16,19 @@
 2. [Key Features](#key-features)
 3. [Live Preview](#live-preview)
 4. [Tech Stack](#tech-stack)
-5. [Getting Started](#getting-started)
-   - [Option A — Standalone HTML (zero install)](#option-a--standalone-html-zero-install)
-   - [Option B — Next.js Dev Project](#option-b--nextjs-dev-project)
-6. [Usage Guide](#usage-guide)
-7. [How It Works](#how-it-works)
-   - [Attendance Percentage](#1-attendance-percentage)
-   - [Classes You Can Bunk](#2-classes-you-can-bunk)
-   - [Classes You Must Attend](#3-classes-you-must-attend)
-8. [Project Structure](#project-structure)
-9. [Customization](#customization)
-10. [Accessibility](#accessibility)
-11. [Keyboard Shortcuts](#keyboard-shortcuts)
-12. [Browser Support](#browser-support)
-13. [Roadmap](#roadmap)
-14. [Contributing](#contributing)
-15. [License](#license)
-16. [Acknowledgements](#acknowledgements)
+5. [Project Architecture](#project-architecture)
+6. [Getting Started](#getting-started)
+7. [Usage Guide](#usage-guide)
+8. [How It Works](#how-it-works)
+9. [Module Reference](#module-reference)
+10. [Customization](#customization)
+11. [Accessibility](#accessibility)
+12. [Keyboard Shortcuts](#keyboard-shortcuts)
+13. [Browser Support](#browser-support)
+14. [Roadmap](#roadmap)
+15. [Contributing](#contributing)
+16. [License](#license)
+17. [Acknowledgements](#acknowledgements)
 
 ---
 
@@ -47,6 +43,8 @@ Instead of just showing a percentage, it answers the two questions students actu
 
 All of this is wrapped in a polished, animation-first UI — count-up numbers, an animated SVG progress ring, floating gradient blobs, spring-bouncing stat cards, and a confetti celebration whenever you cross into the safe zone.
 
+The project follows a **professional, layered architecture** with strict separation of concerns: presentation (CSS) is fully divorced from logic (JS), and the JS itself is split into focused modules (utils / storage / calculator / animations / ui / main).
+
 ---
 
 ## Key Features
@@ -60,6 +58,7 @@ All of this is wrapped in a polished, animation-first UI — count-up numbers, a
 - **Confetti celebration** that fires automatically the moment your attendance crosses into the safe zone
 - **Cross-fading status pill** that smoothly swaps between Safe / Borderline / At-risk
 - **Pop-in card animations** for newly saved snapshots
+- Respects `prefers-reduced-motion`
 
 ### 🧮 Calculation Engine
 - Live attendance percentage with safe color coding (green / amber / red)
@@ -87,9 +86,15 @@ All of this is wrapped in a polished, animation-first UI — count-up numbers, a
 
 ## Live Preview
 
-After downloading the project, simply open `download/attendance-calculator.html` in any modern browser. No server, no build step, no installation required.
+Open `index.html` in any modern browser. No server, no build step, no installation required.
 
-A reference screenshot is included: `download/attendance-calculator-preview.png`.
+If you want a clean local URL instead of a `file://` path:
+
+```bash
+# from this project root
+python3 -m http.server 8080
+# then visit http://localhost:8080/
+```
 
 ---
 
@@ -105,58 +110,90 @@ A reference screenshot is included: `download/attendance-calculator-preview.png`
 | Storage     | `localStorage`                                    | Persists between sessions, no server needed               |
 | JS Standard | Vanilla ES2020+ (no transpilation)               | Runs natively in every evergreen browser                  |
 
-> **Why no framework?** The standalone HTML version is intentionally framework-free so it can be opened from any device, emailed as a single file, hosted on any static host (GitHub Pages, Netlify drop, USB stick), and audited line-by-line. A React/Next.js reference implementation is also available in `src/app/page.tsx` for those who want to integrate it into a larger app.
+**Zero dependencies. Zero build steps. Zero trackers.**
+
+---
+
+## Project Architecture
+
+This project follows a classic **separation-of-concerns** architecture. Each file has a single, well-defined responsibility:
+
+```
+attendance-calculator/
+│
+├── index.html                  # Root markup — pure structure, no styles or logic
+│
+├── css/                        # All presentation, ordered by cascade
+│   ├── reset.css              # Modern CSS reset
+│   ├── variables.css          # Design tokens (colors, type, spacing, shadows)
+│   ├── base.css                # Body, typography, layout shell, header, footer
+│   ├── components.css          # Stepper, slider, ring, cards, history, toast
+│   ├── animations.css         # All @keyframes declarations
+│   └── responsive.css          # Mobile-first media queries
+│
+├── js/                         # All behavior, ordered by dependency
+│   ├── utils.js               # Pure helpers (clamp, $, escapeHtml, uuid)
+│   ├── storage.js             # localStorage CRUD for snapshots
+│   ├── calculator.js          # Pure calculation logic (no DOM)
+│   ├── animations.js          # rAF-based count-up, bump, confetti, toast
+│   ├── ui.js                  # View layer — renders results to DOM
+│   └── main.js                # Entry point — wires events, bootstraps app
+│
+├── assets/                     # (Reserved for future static assets — icons, fonts)
+│
+├── README.md
+└── LICENSE
+```
+
+### Why this structure?
+
+| Principle | How this repo honors it |
+| --- | --- |
+| **Separation of concerns** | HTML = structure, CSS = presentation, JS = behavior. None of them cross boundaries. |
+| **Single responsibility** | Each CSS and JS file owns one concern. `animations.css` has only `@keyframes`. `calculator.js` has only pure math. |
+| **Layered CSS** | Tokens → base → components, so a color change in `variables.css` cascades everywhere. |
+| **Dependency-ordered JS** | Files are loaded in dependency order, so each module can assume its prerequisites exist. |
+| **Namespaced globals** | Each JS module attaches to `window.AC.*`, keeping the global scope clean. |
+| **Pure functions for logic** | `AC.calc.compute()` has no DOM access — fully unit-testable in isolation. |
+| **Mobile-first** | Base styles assume small screens; `responsive.css` progressively enhances. |
+| **Progressive enhancement** | The app works without JS for the very first paint (default values render), then JS hydrates interactivity. |
 
 ---
 
 ## Getting Started
 
-You have two ways to run the Attendance Calculator.
+### Quick Start (zero install)
 
-### Option A — Standalone HTML (zero install)
+1. Unzip this package.
+2. Open `index.html` in any modern browser.
+3. Done — the calculator is fully functional.
 
-This is the recommended path for end users.
+### Optional: Local Server
 
-1. Download `attendance-calculator.html` to your computer.
-2. Double-click it, or drag it into a browser window.
-3. That's it — the calculator is fully functional.
-
-```bash
-# Optional: serve it locally for a cleaner URL
-python3 -m http.server 8080 --directory download
-# then open http://localhost:8080/attendance-calculator.html
-```
-
-### Option B — Next.js Dev Project
-
-For developers who want to extend or integrate the calculator into a larger app, a React/Next.js reference implementation is included.
-
-**Prerequisites**
-
-- [Node.js](https://nodejs.org/) 18+ or [Bun](https://bun.sh) 1.0+
-- Next.js 16 / React 19 / TypeScript 5
-
-**Install & run**
+For a clean `http://localhost` URL (useful when extending the project):
 
 ```bash
-# 1. install dependencies
-bun install      # or: npm install
+# Python 3 (built-in)
+python3 -m http.server 8080
 
-# 2. start the dev server
-bun run dev      # or: npm run dev
+# Or with Node.js
+npx serve .
 
-# 3. open the app
-# dev server runs on http://localhost:3000
+# Or with PHP
+php -S localhost:8080
 ```
 
-**Available scripts**
+Then visit `http://localhost:8080/` in your browser.
 
-| Command            | Purpose                                  |
-| ------------------ | ---------------------------------------- |
-| `bun run dev`      | Start the Next.js dev server (port 3000) |
-| `bun run lint`     | Run ESLint on the project                |
-| `bun run build`    | Produce a production build               |
-| `bun run db:push` | Push Prisma schema to SQLite (if needed) |
+### Development Workflow
+
+Because there is no build step, development is delightfully simple:
+
+1. Edit any CSS or JS file.
+2. Save.
+3. Refresh the browser.
+
+That's it. No `npm install`, no `npm run dev`, no transpiler, no hot-reload to configure.
 
 ---
 
@@ -195,7 +232,7 @@ Click the **Reset** button (circular arrow icon) to restore the inputs to their 
 
 ## How It Works
 
-The calculator uses three simple formulas. All computations happen client-side.
+The calculator uses three simple formulas. All computations happen client-side, in `js/calculator.js`.
 
 ### 1. Attendance Percentage
 
@@ -237,54 +274,106 @@ Clamped to a minimum of 0.
 
 ---
 
-## Project Structure
+## Module Reference
 
+Each JS module exposes a small, well-documented API on `window.AC`.
+
+### `AC.utils` — pure helpers
+
+```js
+AC.utils.clamp(n, lo, hi)        // → number
+AC.utils.$(id)                    // → HTMLElement
+AC.utils.toInt(v, fallback)       // → number
+AC.utils.escapeHtml(s)            // → string (XSS-safe)
+AC.utils.uuid()                   // → string
+AC.utils.formatDate(date)         // → string
 ```
-my-project/
-├── download/                            # ← user-facing deliverables
-│   ├── attendance-calculator.html       # ← standalone single-file app (recommended)
-│   ├── attendance-calculator-preview.png
-│   └── README.md                        # ← this file
-│
-├── src/                                 # ← Next.js reference implementation
-│   └── app/
-│       ├── page.tsx                     # ← React + Framer Motion version
-│       ├── layout.tsx
-│       └── globals.css
-│
-├── public/
-│   ├── logo.svg
-│   └── robots.txt
-│
-├── prisma/schema.prisma                 # ← database schema (optional)
-├── package.json
-├── next.config.ts
-├── tailwind.config.ts
-└── README.md                            # ← this file
+
+### `AC.storage` — localStorage CRUD
+
+```js
+AC.storage.load()                 // → HistoryItem[]
+AC.storage.save(history)          // → boolean
+AC.storage.add(item)              // → HistoryItem[] (after add + trim)
+AC.storage.clear()                // void
+AC.storage.LIMIT                  // 8
 ```
+
+### `AC.calc` — pure calculation engine
+
+```js
+AC.calc.compute(attended, total, threshold)
+// → { attended, total, threshold, percent, percentClamped,
+//     canBunk, mustAttend, bunked, status, color, label }
+
+AC.calc.STATUS                    // { SAFE, WARNING, DANGER }
+AC.calc.COLORS                    // status → hex color
+AC.calc.classify(percent, threshold)
+AC.calc.statusLabel(status)
+```
+
+### `AC.anim` — animation helpers
+
+```js
+AC.anim.animateCountUp(el, target, { suffix, decimals, duration })
+AC.anim.resetCountUp()
+AC.anim.bump(el, className?)
+AC.anim.confetti(containerEl)
+AC.anim.toast(el, msg)
+```
+
+### `AC.ui` — view layer
+
+```js
+AC.ui.init()                      // cache DOM refs, setup ring
+AC.ui.render(result)              // render a calc result bundle
+AC.ui.renderHistory(history)      // render snapshot list
+AC.ui.showToast(msg)
+AC.ui.bumpThreshold()
+AC.ui.els()                       // → cached element refs
+```
+
+### `main.js` — entry point
+
+Auto-bootstraps on `DOMContentLoaded`. Wires input events, stepper buttons, save/reset/clear actions, and keyboard shortcuts to the calculation pipeline.
 
 ---
 
 ## Customization
 
-The HTML file is intentionally readable and easy to hack. All key colors and tokens live at the top of the `<style>` block as CSS custom properties:
+### Colors
+
+All colors live in `css/variables.css`. Change the three palette variables and the entire UI updates:
 
 ```css
 :root {
-  --emerald: #10b981;   /* safe color    */
-  --amber:   #f59e0b;   /* warning color */
-  --rose:    #ef4444;   /* danger color  */
-  --radius:  16px;      /* global corner radius */
+  --emerald:  #10b981;   /* safe color    */
+  --amber:    #f59e0b;   /* warning color */
+  --rose:     #ef4444;   /* danger color  */
 }
 ```
 
-### Common Tweaks
+### Defaults
 
-- **Change the default threshold**: edit `value="75"` on the `<input id="threshold">` element and the matching `threshold` value in the `recalc()` function.
-- **Change default attended/total**: edit `value="45"` and `value="60"` on the two stepper inputs.
-- **Increase snapshot history limit**: change `.slice(0, 8)` in `saveSnapshot()` to any number you prefer.
-- **Disable confetti**: comment out the `fireConfetti()` call in `recalc()`.
-- **Change the page title**: edit the `<title>` tag in the `<head>`.
+Edit `index.html` to change the starting values:
+
+```html
+<input id="attended"  value="45" ... />
+<input id="total"     value="60" ... />
+<input id="threshold" value="75" ... />
+```
+
+### History Limit
+
+In `js/storage.js`:
+
+```js
+const LIMIT = 8;   // change to any number
+```
+
+### Disable Confetti
+
+In `js/ui.js`, comment out the `confetti(...)` call inside `render()`.
 
 ---
 
@@ -299,7 +388,7 @@ This project follows modern accessibility best practices:
 - ✅ Color is never the only signal — text labels accompany every status indicator
 - ✅ Maintains at least a 4.5:1 contrast ratio for body text in both light and dark mode
 - ✅ Respects `prefers-color-scheme` for automatic light/dark theme switching
-- ✅ No motion that triggers photosensitivity — all animations are gentle (≤ 1.4s)
+- ✅ Respects `prefers-reduced-motion` — all animations are disabled for users who request reduced motion
 
 ---
 
@@ -308,7 +397,7 @@ This project follows modern accessibility best practices:
 | Key             | Action            |
 | --------------- | ----------------- |
 | `Tab` / `Shift+Tab` | Move between controls |
-| `+` / `-` buttons | Increment / decrement values |
+| `+` / `−` buttons | Increment / decrement values |
 | `S`             | Save snapshot     |
 | `R`             | Reset all inputs   |
 | `←` / `→` on slider | Decrease / increase threshold |
@@ -362,18 +451,28 @@ Contributions are welcome — bug reports, feature requests, accessibility impro
 
 - **HTML**: 2-space indent, lowercase tags, double-quoted attributes
 - **CSS**: 2-space indent, custom properties at the top of `:root`, mobile-first media queries
-- **JS**: 2-space indent, `'use strict'`, IIFE-wrapped, descriptive variable names
+- **JS**: 2-space indent, `'use strict'`, IIFE-wrapped, descriptive variable names, JSDoc on public APIs
+
+### Architecture Rules
+
+When adding a new feature:
+
+- **New CSS component?** → add to `css/components.css` (or split into a new file)
+- **New animation?** → add the `@keyframes` to `css/animations.css`
+- **New calculation?** → add to `js/calculator.js` (must be pure, no DOM access)
+- **New DOM rendering?** → add to `js/ui.js`
+- **New event listener?** → wire it in `js/main.js`
+
+Never mix concerns across these boundaries.
 
 ---
 
 ## License
 
-Released under the **MIT License**.
+Released under the **MIT License** — see [LICENSE](./LICENSE) for full text.
 
 ```
-MIT License
-
-Copyright (c) 2026 Attendance Calculator Contributors
+MIT License — Copyright (c) 2026 Attendance Calculator Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -385,13 +484,7 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 ```
 
 ---
@@ -403,6 +496,7 @@ This project stands on the shoulders of the open web. Thanks to:
 - The **MDN Web Docs** team for the best reference documentation on Earth
 - The **Inter** typeface by Rasmus Andersson — designed for screens
 - The **Lucide** icon library (the source of the inline SVG paths used here)
+- **Andy Bell** for the modern CSS reset that `css/reset.css` is based on
 - Every student who ever asked *"how many classes can I skip?"* — this is for you
 
 ---

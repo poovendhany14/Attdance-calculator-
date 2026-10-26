@@ -1,0 +1,74 @@
+/* =============================================================
+ * base.css
+ * Foundation layer — body, layout shell, header, typography,
+ * utility helpers. No component-specific styles here.
+ * ============================================================= */
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+.wrap {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4) var(--space-8);
+}
+
+/* ---- Header ---- */
+.header {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.logo-badge {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-lg);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--emerald), var(--amber), var(--rose));
+  box-shadow: var(--shadow-lg);
+  animation: popIn 0.6s var(--ease-out) both, spinSlow 6s ease-in-out infinite;
+}
+
+.title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, var(--emerald-dark), var(--amber-dark), var(--rose-dark));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  color: var(--muted-fg);
+  margin: var(--space-2) auto 0;
+  max-width: 36rem;
+  font-size: 1rem;
+}
+
+/* ---- Footer ---- */
+.footer {
+  margin-top: var(--space-8);
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted-fg);
+}
+
+/* ---- Utilities ---- */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.fade-up {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.6s var(--ease-out) forwards;
+}

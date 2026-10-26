@@ -1,0 +1,108 @@
+/* =============================================================
+ * animations.css
+ * All @keyframes declarations, isolated for re-use and tuning.
+ * Motion-heavy by default; respects prefers-reduced-motion
+ * (handled in reset.css).
+ * ============================================================= */
+
+/* ---- Background drift ---- */
+@keyframes bgmove {
+  0% {
+    background-position: 0% 0%, 0% 0%, 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%, -50% 30%, 30% -50%;
+  }
+}
+
+/* ---- Floating blobs ---- */
+@keyframes float1 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, 20px) scale(1.1);
+  }
+}
+
+@keyframes float2 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-40px, 30px) scale(1.15);
+  }
+}
+
+@keyframes float3 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(20px, -25px) scale(1.1);
+  }
+}
+
+/* ---- Entrance: pop in with rotation ---- */
+@keyframes popIn {
+  from {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+/* ---- Subtle spin (logo badge) ---- */
+@keyframes spinSlow {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+/* ---- Fade up on enter ---- */
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Bump (stat value pop) ---- */
+@keyframes bump {
+  0% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ---- Pop center (ring percentage) ---- */
+@keyframes popCenter {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---- Confetti fall ---- */
+@keyframes confetti-fall {
+  to {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
+  }
+}

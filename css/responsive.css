@@ -1,0 +1,100 @@
+/* =============================================================
+ * responsive.css
+ * Mobile-first media queries. Base styles assume small screens;
+ * breakpoints here enhance for tablets and desktops.
+ *
+ * Breakpoint scale (Tailwind-aligned):
+ *   sm: 640px   — large phones in landscape
+ *   md: 768px   — tablets
+ *   lg: 900px   — small desktops (grid switches to 2 columns here)
+ *   xl: 1280px  — large desktops
+ * ============================================================= */
+
+/* ---- ≥ 640px: large phones ---- */
+@media (min-width: 640px) {
+  .wrap {
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  .stats {
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1.25rem;
+  }
+
+  .stat-val {
+    font-size: 2.25rem;
+  }
+}
+
+/* ---- ≥ 768px: tablets ---- */
+@media (min-width: 768px) {
+  .title {
+    font-size: 3rem;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+  }
+
+  .break-cell .val {
+    font-size: 1.25rem;
+  }
+
+  .history-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+/* ---- ≥ 900px: desktops — switch main grid to 2 columns ---- */
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .panel {
+    padding: 2rem;
+  }
+}
+
+/* ---- ≥ 1280px: large desktops ---- */
+@media (min-width: 1280px) {
+  .wrap {
+    padding: 4rem 2rem 5rem;
+  }
+
+  .ring {
+    width: 320px;
+    height: 320px;
+  }
+
+  .ring-pct {
+    font-size: 3.5rem;
+  }
+}
+
+/* ---- Reduced motion preference ---- */
+@media (prefers-reduced-motion: reduce) {
+  .blob-1,
+  .blob-2,
+  .blob-3,
+  .bg-grad,
+  .logo-badge {
+    animation: none !important;
+  }
+
+  .ring-circle-fg,
+  .stat-val,
+  .threshold-val,
+  .ring-pct {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .confetti {
+    display: none !important;
+  }
+}
