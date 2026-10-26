@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Attendance Calculator · Animated</title>
+<meta name="description" content="A beautiful, animation-rich attendance calculator. Know exactly how many classes you can bunk and how many you must attend." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* ---------- design tokens ---------- */
+  :root {
+    --bg: #ffffff;
+    --fg: #0a0a0a;
+    --card: #ffffff;
+    --muted: #f4f4f5;
+    --muted-fg: #71717a;
+    --border: #e4e4e7;
+    --emerald: #10b981;
+    --amber: #f59e0b;
+    --rose: #ef4444;
+    --radius: 16px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,.10);
+    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0a0a;
+      --fg: #fafafa;
+      --card: #18181b;
+      --muted: #27272a;
+      --muted-fg: #a1a1aa;
+      --border: #27272a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  button { font-family: inherit; cursor: pointer; }
+  input { font-family: inherit; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* ---------- layout ---------- */
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+
+  /* ---------- animated background ---------- */
+  .bg-layer { position: fixed; inset: 0; z-index: -10; pointer-events: none; overflow: hidden; }
+  .bg-grad {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(60% 50% at 15% 10%, rgba(16,185,129,.18), transparent 60%),
+      radial-gradient(50% 50% at 85% 20%, rgba(245,158,11,.16), transparent 60%),
+      radial-gradient(50% 50% at 50% 95%, rgba(239,68,68,.12), transparent 60%);
+    animation: bgmove 20s linear infinite alternate;
+  }
+  @keyframes bgmove {
+    0%   { background-position: 0% 0%, 0% 0%, 0% 0%; }
+    100% { background-position: 100% 100%, -50% 30%, 30% -50%; }
+  }
+  .blob {
+    position: absolute; border-radius: 999px; filter: blur(70px); opacity: .8;
+  }
+  .blob-1 { width: 280px; height: 280px; top: -80px; left: -80px; background: rgba(16,185,129,.30); animation: float1 14s ease-in-out infinite; }
+  .blob-2 { width: 320px; height: 320px; top: 33%; right: -80px; background: rgba(245,158,11,.25); animation: float2 17s ease-in-out infinite; }
+  .blob-3 { width: 280px; height: 280px; bottom: -100px; left: 33%; background: rgba(239,68,68,.20); animation: float3 12s ease-in-out infinite; }
+  @keyframes float1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,20px) scale(1.1)} }
+  @keyframes float2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,30px) scale(1.15)} }
+  @keyframes float3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(20px,-25px) scale(1.1)} }
+
+  /* ---------- header ---------- */
+  .header { text-align: center; margin-bottom: 2.5rem; }
+  .logo-badge {
+    width: 64px; height: 64px; margin: 0 auto 1rem; border-radius: 16px;
+    display: grid; place-items: center; color: #fff;
+    background: linear-gradient(135deg, #10b981, #f59e0b, #ef4444);
+    box-shadow: var(--shadow-lg);
+    animation: popIn .6s cubic-bezier(.16,1,.3,1) both, spinSlow 6s ease-in-out infinite;
+  }
+  @keyframes popIn { from { transform: scale(0) rotate(-180deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+  @keyframes spinSlow { 0%,100%{transform:rotate(0)} 50%{transform:rotate(8deg)} }
+  .title {
+    font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; letter-spacing: -.02em;
+    background: linear-gradient(90deg, #059669, #d97706, #dc2626);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin: 0;
+  }
+  .subtitle { color: var(--muted-fg); margin: .5rem auto 0; max-width: 36rem; font-size: 1rem; }
+  .fade-up { opacity: 0; transform: translateY(20px); animation: fadeUp .6s cubic-bezier(.16,1,.3,1) forwards; }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+  /* ---------- grid ---------- */
+  .grid { display: grid; gap: 1.5rem; }
+  @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+  .panel {
+    background: color-mix(in srgb, var(--card) 80%, transparent);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ---------- stepper ---------- */
+  .stepper {
+    border: 1px solid var(--border); background: var(--card);
+    border-radius: 16px; padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+    transition: transform .25s cubic-bezier(.16,1,.3,1), box-shadow .25s;
+  }
+  .stepper:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .stepper-label { display: flex; align-items: center; gap: .5rem; font-size: .875rem; font-weight: 500; color: var(--muted-fg); }
+  .stepper-row { display: flex; align-items: center; gap: .75rem; margin-top: 1rem; }
+  .stepper-btn {
+    width: 40px; height: 40px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+    display: grid; place-items: center; font-size: 18px;
+    transition: transform .15s, background .15s;
+  }
+  .stepper-btn:hover { transform: scale(1.1); background: var(--muted); }
+  .stepper-btn:active { transform: scale(.85); }
+  .stepper-input {
+    flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+    text-align: center; font-size: 1.875rem; font-weight: 800;
+    color: var(--fg); font-variant-numeric: tabular-nums;
+  }
+  .stepper-input::-webkit-outer-spin-button, .stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* ---------- threshold ---------- */
+  .threshold { border: 1px solid var(--border); background: var(--card); border-radius: 16px; padding: 1.25rem; box-shadow: var(--shadow-sm); transition: transform .25s; }
+  .threshold:hover { transform: translateY(-3px); }
+  .threshold-head { display: flex; justify-content: space-between; align-items: center; font-size: .875rem; font-weight: 500; }
+  .threshold-head .lbl { display: flex; align-items: center; gap: .5rem; color: var(--muted-fg); }
+  .threshold-val {
+    font-size: 1.5rem; font-weight: 900; color: var(--amber);
+    transition: transform .25s; font-variant-numeric: tabular-nums;
+  }
+  .threshold-val.bump { animation: bump .3s ease; }
+  @keyframes bump { 0%{transform:scale(1.4)} 100%{transform:scale(1)} }
+  .threshold input[type=range] {
+    width: 100%; margin-top: 1rem; -webkit-appearance: none; appearance: none; height: 6px;
+    background: linear-gradient(90deg, var(--amber) 0%, var(--amber) var(--p, 50%), var(--muted) var(--p, 50%));
+    border-radius: 999px; outline: none;
+  }
+  .threshold input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 22px; height: 22px;
+    border-radius: 50%; background: #fff; border: 4px solid var(--amber); cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  }
+  .threshold input[type=range]::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 4px solid var(--amber); cursor: pointer;
+  }
+  .range-ticks { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-fg); margin-top: 4px; }
+
+  /* ---------- actions ---------- */
+  .actions { display: flex; gap: .75rem; margin-top: 1rem; }
+  .btn-primary {
+    flex: 1; border: none; border-radius: 12px; padding: .85rem 1rem;
+    font-weight: 600; color: #fff; font-size: 1rem;
+    background: linear-gradient(90deg, #10b981, #f59e0b);
+    box-shadow: 0 4px 14px rgba(245,158,11,.35);
+    transition: transform .2s;
+  }
+  .btn-primary:hover { transform: scale(1.02); }
+  .btn-primary:active { transform: scale(.97); }
+  .btn-ghost {
+    width: 48px; height: 48px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+    display: grid; place-items: center; transition: transform .25s;
+  }
+  .btn-ghost:hover { transform: rotate(-90deg) scale(1.05); }
+  .btn-ghost:active { transform: scale(.9); }
+
+  /* ---------- progress ring ---------- */
+  .ring-wrap { display: grid; place-items: center; padding: 1rem 0; }
+  .ring { width: 280px; height: 280px; position: relative; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring-center {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+  }
+  .ring-pct {
+    font-size: 3rem; font-weight: 900; line-height: 1;
+    font-variant-numeric: tabular-nums;
+    animation: popCenter .4s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes popCenter { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+  .ring-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .12em; color: var(--muted-fg); margin-top: .35rem; }
+  .ring-circle-bg { stroke: var(--muted); opacity: .35; }
+  .ring-circle-fg { transition: stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1), stroke 0.4s; }
+
+  /* ---------- status pill ---------- */
+  .status-pill {
+    display: flex; justify-content: center; align-items: center; gap: .5rem;
+    margin-top: 1rem; font-weight: 600;
+    animation: fadeUp .3s ease;
+  }
+  .status-pill .icon { width: 20px; height: 20px; }
+
+  /* ---------- stat cards ---------- */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: 1.5rem; }
+  .stat-card {
+    border: 1px solid var(--border); border-radius: 16px; padding: 1rem;
+    transition: transform .25s;
+    background: var(--card);
+  }
+  .stat-card:hover { transform: translateY(-4px) scale(1.02); }
+  .stat-card.emerald { background: linear-gradient(135deg, rgba(16,185,129,.08), rgba(16,185,129,.02)); }
+  .stat-card.rose { background: linear-gradient(135deg, rgba(239,68,68,.08), rgba(239,68,68,.02)); }
+  .stat-head { display: flex; align-items: center; gap: .35rem; font-size: .75rem; font-weight: 500; color: var(--muted-fg); }
+  .stat-head .icon { width: 16px; height: 16px; }
+  .stat-val { font-size: 1.875rem; font-weight: 900; margin-top: .25rem; font-variant-numeric: tabular-nums; animation: bump .3s ease; }
+  .stat-card.emerald .stat-val { color: #059669; }
+  .stat-card.rose .stat-val { color: #dc2626; }
+  .stat-sub { font-size: 10px; color: var(--muted-fg); margin-top: .25rem; }
+
+  /* ---------- breakdown ---------- */
+  .breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: 1rem; text-align: center; }
+  .break-cell { background: var(--muted); border-radius: 12px; padding: .75rem; opacity: .8; }
+  .break-cell .lbl { font-size: .75rem; color: var(--muted-fg); }
+  .break-cell .val { font-size: 1.125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ---------- history ---------- */
+  .history { margin-top: 2.5rem; }
+  .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .history-title { display: flex; align-items: center; gap: .5rem; font-size: 1.125rem; font-weight: 700; }
+  .history-title .icon { width: 20px; height: 20px; color: var(--emerald); }
+  .badge { background: var(--muted); border-radius: 999px; padding: 2px 8px; font-size: .75rem; color: var(--muted-fg); }
+  .clear-btn { display: flex; align-items: center; gap: .25rem; padding: 4px 8px; border: none; background: transparent; font-size: .75rem; color: var(--muted-fg); border-radius: 8px; transition: color .2s, background .2s; }
+  .clear-btn:hover { color: var(--rose); background: rgba(239,68,68,.08); }
+  .clear-btn .icon { width: 14px; height: 14px; }
+
+  .history-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .hist-card {
+    position: relative; overflow: hidden; border: 1px solid var(--border);
+    background: var(--bg); border-radius: 16px; padding: 1rem;
+    transition: transform .25s;
+    animation: popIn .35s cubic-bezier(.16,1,.3,1) both;
+  }
+  .hist-card:hover { transform: translateY(-4px); }
+  .hist-bar { position: absolute; left: 0; top: 0; height: 100%; width: 6px; }
+  .hist-card .date { font-size: .75rem; color: var(--muted-fg); margin-left: 8px; }
+  .hist-card .pct { font-size: 1.875rem; font-weight: 900; margin-top: .25rem; font-variant-numeric: tabular-nums; margin-left: 8px; }
+  .hist-card .meta { font-size: .75rem; color: var(--muted-fg); margin-top: .25rem; margin-left: 8px; }
+
+  .empty {
+    grid-column: 1 / -1; border: 1px dashed var(--border); border-radius: 16px;
+    padding: 2rem; text-align: center; color: var(--muted-fg);
+  }
+  .empty .icon { width: 32px; height: 32px; opacity: .5; margin: 0 auto .5rem; display: block; }
+
+  /* ---------- confetti ---------- */
+  .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; overflow: hidden; }
+  .confetti span {
+    position: absolute; top: -20px; width: 10px; height: 14px; border-radius: 2px;
+    animation: confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ---------- footer ---------- */
+  .footer { margin-top: 3rem; text-align: center; font-size: .75rem; color: var(--muted-fg); }
+
+  /* ---------- toast ---------- */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--fg); color: var(--bg); padding: .65rem 1.25rem; border-radius: 12px;
+    box-shadow: var(--shadow-lg); font-size: .875rem; font-weight: 500; opacity: 0;
+    transition: opacity .3s, transform .3s; z-index: 60; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- animated background -->
+<div class="bg-layer" aria-hidden="true">
+  <div class="bg-grad"></div>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<main class="wrap">
+
+  <!-- header -->
+  <header class="header fade-up">
+    <div class="logo-badge" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+    </div>
+    <h1 class="title">Attendance Calculator</h1>
+    <p class="subtitle">Know exactly how many classes you can skip — and how many you must attend. Beautiful, animated, and privacy-friendly.</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- LEFT: inputs -->
+    <section class="fade-up" style="animation-delay: .15s">
+
+      <div class="stepper">
+        <div class="stepper-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4"/></svg>
+          Classes Attended
+        </div>
+        <div class="stepper-row">
+          <button class="stepper-btn" data-dec="attended" aria-label="decrement attended">−</button>
+          <input id="attended" class="stepper-input tabular" type="number" value="45" min="0" max="10000" inputmode="numeric" />
+          <button class="stepper-btn" data-inc="attended" aria-label="increment attended">+</button>
+        </div>
+      </div>
+
+      <div class="stepper" style="margin-top: .75rem">
+        <div class="stepper-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Total Classes Held
+        </div>
+        <div class="stepper-row">
+          <button class="stepper-btn" data-dec="total" aria-label="decrement total">−</button>
+          <input id="total" class="stepper-input tabular" type="number" value="60" min="0" max="10000" inputmode="numeric" />
+          <button class="stepper-btn" data-inc="total" aria-label="increment total">+</button>
+        </div>
+      </div>
+
+      <div class="threshold" style="margin-top: .75rem">
+        <div class="threshold-head">
+          <span class="lbl">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.582a.5.5 0 0 1 0 .962L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/></svg>
+            Required Threshold
+          </span>
+          <span id="threshold-val" class="threshold-val">75%</span>
+        </div>
+        <input id="threshold" type="range" min="50" max="100" value="75" style="--p:50%" />
+        <div class="range-ticks"><span>50%</span><span>75%</span><span>100%</span></div>
+      </div>
+
+      <div class="actions">
+        <button id="save-btn" class="btn-primary">Save Snapshot</button>
+        <button id="reset-btn" class="btn-ghost" aria-label="reset">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- RIGHT: results -->
+    <section class="panel fade-up" style="animation-delay: .25s">
+      <div class="ring-wrap">
+        <div class="ring">
+          <svg width="280" height="280" viewBox="0 0 280 280">
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#10b981" stop-opacity="0.4"/>
+                <stop offset="100%" stop-color="#10b981"/>
+              </linearGradient>
+              <filter id="ringGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <circle class="ring-circle-bg" cx="140" cy="140" r="110" fill="none" stroke-width="14"/>
+            <circle id="ring-fg" class="ring-circle-fg" cx="140" cy="140" r="110" fill="none" stroke="url(#ringGrad)" stroke-width="14" stroke-linecap="round" filter="url(#ringGlow)"/>
+          </svg>
+          <div class="ring-center">
+            <div>
+              <div id="ring-pct" class="ring-pct tabular">0.0%</div>
+              <div class="ring-label">attendance</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="status-pill" class="status-pill">
+        <span class="icon"></span>
+        <span id="status-text">Calculating…</span>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card emerald">
+          <div class="stat-head">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6l6 6v3a2 2 0 0 1-2 2h-2"/><path d="M22 13h-6v6M19.5 22a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM2 17l2-2h4l4 4H4a2 2 0 0 1-2-2z"/></svg>
+            Can Bunk
+          </div>
+          <div id="can-bunk" class="stat-val tabular">0</div>
+          <div class="stat-sub">classes you can skip</div>
+        </div>
+        <div class="stat-card rose">
+          <div class="stat-head">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6l6 6v3a2 2 0 0 1-2 2h-2"/><path d="M22 13h-6v6M19.5 22a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM2 17l2-2h4l4 4H4a2 2 0 0 1-2-2z"/></svg>
+            Must Attend
+          </div>
+          <div id="must-attend" class="stat-val tabular">0</div>
+          <div class="stat-sub" id="must-sub">classes to reach 75%</div>
+        </div>
+      </div>
+
+      <div class="breakdown">
+        <div class="break-cell"><div class="lbl">Attended</div><div id="bk-attended" class="val tabular">0</div></div>
+        <div class="break-cell"><div class="lbl">Total</div><div id="bk-total" class="val tabular">0</div></div>
+        <div class="break-cell"><div class="lbl">Bunked</div><div id="bk-bunked" class="val tabular">0</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- history -->
+  <section class="history fade-up" style="animation-delay: .4s">
+    <div class="history-head">
+      <div class="history-title">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Recent Snapshots
+        <span id="hist-badge" class="badge" style="display:none">0</span>
+      </div>
+      <button id="clear-btn" class="clear-btn" style="display:none">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Clear
+      </button>
+    </div>
+    <div id="history-grid" class="history-grid"></div>
+  </section>
+
+  <footer class="footer">Built with vanilla HTML · CSS animations · Your data stays in your browser</footer>
+</main>
+
+<div id="confetti" class="confetti" aria-hidden="true"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- state ----------
+  const $ = (id) => document.getElementById(id);
+  const attendedEl = $('attended');
+  const totalEl = $('total');
+  const thresholdEl = $('threshold');
+  const thresholdValEl = $('threshold-val');
+  const ringFg = $('ring-fg');
+  const ringPctEl = $('ring-pct');
+  const statusPill = $('status-pill');
+  const statusText = $('status-text');
+  const canBunkEl = $('can-bunk');
+  const mustAttendEl = $('must-attend');
+  const mustSubEl = $('must-sub');
+  const bkAttendedEl = $('bk-attended');
+  const bkTotalEl = $('bk-total');
+  const bkBunkedEl = $('bk-bunked');
+  const historyGrid = $('history-grid');
+  const histBadge = $('hist-badge');
+  const clearBtn = $('clear-btn');
+  const confettiBox = $('confetti');
+  const toastEl = $('toast');
+
+  const R = 110;
+  const CIRC = 2 * Math.PI * R;
+  ringFg.setAttribute('stroke-dasharray', CIRC);
+  ringFg.setAttribute('stroke-dashoffset', CIRC);
+
+  let history = [];
+  try {
+    const raw = localStorage.getItem('att-hist');
+    if (raw) history = JSON.parse(raw);
+  } catch (e) {}
+
+  let prevStatus = null;
+
+  // ---------- helpers ----------
+  function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+  function statusColor(s) {
+    return s === 'safe' ? '#10b981' : s === 'warning' ? '#f59e0b' : '#ef4444';
+  }
+
+  function statusIcon(s) {
+    if (s === 'safe') {
+      return '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>';
+    }
+    return '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  }
+
+  function statusLabel(s) {
+    return s === 'safe' ? 'You are safe — keep it up!'
+         : s === 'warning' ? 'Borderline — be careful'
+         : 'At risk — attend more classes';
+  }
+
+  // count-up animation
+  let pctRAF = null;
+  let pctCurrent = 0;
+  function animatePercent(target) {
+    if (pctRAF) cancelAnimationFrame(pctRAF);
+    const start = pctCurrent;
+    const t0 = performance.now();
+    const dur = 800;
+    function tick(t) {
+      const k = clamp((t - t0) / dur, 0, 1);
+      const eased = 1 - Math.pow(1 - k, 3);
+      const v = start + (target - start) * eased;
+      pctCurrent = v;
+      ringPctEl.textContent = v.toFixed(1) + '%';
+      if (k < 1) pctRAF = requestAnimationFrame(tick);
+    }
+    pctRAF = requestAnimationFrame(tick);
+  }
+
+  // bump animation on stat values
+  function bump(el) {
+    el.style.animation = 'none';
+    // reflow
+    void el.offsetWidth;
+    el.style.animation = 'bump .3s ease';
+  }
+
+  // ---------- confetti ----------
+  function fireConfetti() {
+    confettiBox.innerHTML = '';
+    const colors = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+    for (let i = 0; i < 50; i++) {
+      const span = document.createElement('span');
+      const left = Math.random() * 100;
+      const delay = Math.random() * 0.4;
+      const dur = 1.6 + Math.random() * 0.8;
+      const color = colors[i % colors.length];
+      span.style.left = left + '%';
+      span.style.background = color;
+      span.style.animationDelay = delay + 's';
+      span.style.animationDuration = dur + 's';
+      confettiBox.appendChild(span);
+    }
+    setTimeout(() => { confettiBox.innerHTML = ''; }, 2400);
+  }
+
+  // ---------- toast ----------
+  let toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+  }
+
+  // ---------- update ring color ----------
+  function setRingColor(color) {
+    // Update the gradient stops
+    const stops = ringFg.parentNode.querySelectorAll('linearGradient#ringGrad stop');
+    stops[0].setAttribute('stop-color', color);
+    stops[1].setAttribute('stop-color', color);
+    // also update stroke (fallback when gradient hides)
+    ringFg.setAttribute('stroke', 'url(#ringGrad)');
+  }
+
+  // ---------- main recalc ----------
+  function recalc() {
+    const attended = clamp(parseInt(attendedEl.value || '0', 10) || 0, 0, 100000);
+    const total = clamp(parseInt(totalEl.value || '0', 10) || 0, 0, 100000);
+    const threshold = clamp(parseInt(thresholdEl.value, 10) || 0, 50, 100);
+
+    // threshold slider visual
+    const p = ((threshold - 50) / 50) * 100;
+    thresholdEl.style.setProperty('--p', p + '%');
+    thresholdValEl.textContent = threshold + '%';
+
+    const percent = total > 0 ? (attended / total) * 100 : 0;
+    const pClamp = clamp(percent, 0, 100);
+
+    // ring
+    const offset = CIRC - CIRC * (pClamp / 100);
+    ringFg.setAttribute('stroke-dashoffset', offset);
+    animatePercent(pClamp);
+
+    // status
+    const status = percent >= threshold ? 'safe'
+                 : percent >= threshold - 15 ? 'warning'
+                 : 'danger';
+    const color = statusColor(status);
+    setRingColor(color);
+    ringPctEl.style.color = color;
+
+    if (status !== prevStatus) {
+      // re-trigger popCenter animation
+      ringPctEl.style.animation = 'none';
+      void ringPctEl.offsetWidth;
+      ringPctEl.style.animation = 'popCenter .4s cubic-bezier(.16,1,.3,1)';
+
+      statusPill.style.color = color;
+      statusPill.querySelector('.icon').outerHTML = statusIcon(status);
+      statusText.textContent = statusLabel(status);
+
+      if (status === 'safe') fireConfetti();
+    }
+    prevStatus = status;
+
+    // can bunk: floor((attended * 100 / threshold) - total)
+    let canBunk = 0;
+    if (attended > 0) {
+      canBunk = Math.max(0, Math.floor((attended * 100) / threshold - total));
+    }
+    canBunkEl.textContent = canBunk;
+    bump(canBunkEl);
+
+    // must attend: ceil((k*total - attended) / (1 - k))
+    let mustAttend = 0;
+    const k = threshold / 100;
+    if (k < 1) {
+      mustAttend = Math.max(0, Math.ceil((k * total - attended) / (1 - k)));
+    } else {
+      mustAttend = attended >= total ? 0 : (total - attended);
+    }
+    mustAttendEl.textContent = mustAttend;
+    mustSubEl.textContent = 'classes to reach ' + threshold + '%';
+    bump(mustAttendEl);
+
+    // breakdown
+    bkAttendedEl.textContent = attended;
+    bkTotalEl.textContent = total;
+    bkBunkedEl.textContent = Math.max(0, total - attended);
+  }
+
+  // threshold val bump on change
+  function bumpThreshold() {
+    thresholdValEl.classList.remove('bump');
+    void thresholdValEl.offsetWidth;
+    thresholdValEl.classList.add('bump');
+  }
+
+  // ---------- history ----------
+  function renderHistory() {
+    historyGrid.innerHTML = '';
+    if (history.length === 0) {
+      historyGrid.innerHTML = '<div class="empty"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>No snapshots yet. Click <b>Save Snapshot</b> to record your attendance.</div>';
+      histBadge.style.display = 'none';
+      clearBtn.style.display = 'none';
+      return;
+    }
+    histBadge.style.display = '';
+    histBadge.textContent = history.length;
+    clearBtn.style.display = '';
+    history.forEach((h, i) => {
+      const card = document.createElement('div');
+      card.className = 'hist-card';
+      card.style.animationDelay = (i * 0.05) + 's';
+      const color = statusColor(h.status);
+      card.innerHTML = `
+        <div class="hist-bar" style="background:${color}"></div>
+        <div class="date">${escapeHtml(h.date)}</div>
+        <div class="pct" style="color:${color}">${h.percent.toFixed(1)}%</div>
+        <div class="meta">${h.attended} / ${h.total} classes</div>
+      `;
+      historyGrid.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  }
+
+  function saveSnapshot() {
+    const attended = clamp(parseInt(attendedEl.value || '0', 10) || 0, 0, 100000);
+    const total = clamp(parseInt(totalEl.value || '0', 10) || 0, 0, 100000);
+    const threshold = clamp(parseInt(thresholdEl.value, 10) || 0, 50, 100);
+    if (total <= 0) { toast('Total classes must be greater than 0'); return; }
+    const percent = (attended / total) * 100;
+    const status = percent >= threshold ? 'safe' : percent >= threshold - 15 ? 'warning' : 'danger';
+    const item = {
+      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random()),
+      date: new Date().toLocaleString(),
+      attended, total,
+      percent: parseFloat(percent.toFixed(2)),
+      status
+    };
+    history = [item, ...history].slice(0, 8);
+    try { localStorage.setItem('att-hist', JSON.stringify(history)); } catch (e) {}
+    renderHistory();
+    toast('Snapshot saved');
+  }
+
+  function resetAll() {
+    attendedEl.value = 0;
+    totalEl.value = 0;
+    thresholdEl.value = 75;
+    bumpThreshold();
+    recalc();
+    toast('Reset');
+  }
+
+  function clearHistory() {
+    history = [];
+    try { localStorage.removeItem('att-hist'); } catch (e) {}
+    renderHistory();
+    toast('History cleared');
+  }
+
+  // ---------- wire up events ----------
+  attendedEl.addEventListener('input', recalc);
+  totalEl.addEventListener('input', recalc);
+  thresholdEl.addEventListener('input', () => { bumpThreshold(); recalc(); });
+
+  document.querySelectorAll('[data-inc]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-inc');
+      const el = $(id);
+      el.value = clamp(parseInt(el.value || '0', 10) + 1, 0, 100000);
+      recalc();
+    });
+  });
+  document.querySelectorAll('[data-dec]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-dec');
+      const el = $(id);
+      el.value = clamp(parseInt(el.value || '0', 10) - 1, 0, 100000);
+      recalc();
+    });
+  });
+
+  $('save-btn').addEventListener('click', saveSnapshot);
+  $('reset-btn').addEventListener('click', resetAll);
+  clearBtn.addEventListener('click', clearHistory);
+
+  // keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'number') return;
+    if (e.key === 's' || e.key === 'S') { e.preventDefault(); saveSnapshot(); }
+    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); resetAll(); }
+  });
+
+  // ---------- first paint ----------
+  renderHistory();
+  recalc();
+})();
+</script>
+</body>
+</html>
